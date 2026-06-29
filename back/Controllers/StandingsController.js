@@ -5,6 +5,8 @@ const NodeCache = require('node-cache');
 // Cache for 1 hour (3600 seconds)
 const cache = new NodeCache({ stdTTL: 3600 });
 
+// https://v3.football.api-sports.io/standings?league=233&season=2022
+
 const API_BASE_URL = 'https://v3.football.api-sports.io';
 
 const getHeaders = () => {
@@ -19,8 +21,8 @@ const getHeaders = () => {
  * @access  Public
  */
 const getStandings = asyncHandler(async (req, res) => {
-    const league = req.query.league || '1040'; // Default: Egyptian Premier League
-    const season = req.query.season || '2024';
+    const league = req.query.league || '233'; // Default: Egyptian Premier League
+    const season = req.query.season || '2024'; // Default: 2022
 
     const cacheKey = `standings_${league}_${season}`;
     const cachedStandings = cache.get(cacheKey);

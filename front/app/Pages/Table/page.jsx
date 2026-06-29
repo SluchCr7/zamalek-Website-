@@ -7,6 +7,7 @@ import { Trophy, Award, ShieldCheck, ChevronUp, ChevronDown, Sliders, Info, Zap,
 import useSWR from 'swr';
 import axios from 'axios';
 import TitleSection from '@/Components/TitleSection';
+import { zamalekTopGoalsLiveSeasson , zamalekAssistsLiveSeasson , cleanSheatsLiveSeasson } from '@/utils/data';
 
 const fetcher = url => axios.get(url).then(res => res.data);
 

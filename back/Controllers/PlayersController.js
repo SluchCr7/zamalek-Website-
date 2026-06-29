@@ -64,7 +64,7 @@ const getPlayers = asyncHandler(async (req, res) => {
                     position: stats.games?.position || 'Unknown',
                     appearances: stats.games?.appearences || 0,
                     goals: stats.goals?.total || 0,
-                    assists: stats.passes?.accuracy || stats.goals?.assists || 0 // Sometimes assists are in goals, sometimes empty
+                    assists: stats.goals?.assists || 0
                 };
             });
 

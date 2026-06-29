@@ -13,9 +13,10 @@ const fetcher = url => axios.get(url).then(res => res.data);
 export default function PlayerDetailsPage() {
     const params = useParams();
     const id = params?.id;
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACK_URL || 'http://localhost:3001';
 
     // Fallback if no ID yet
-    const { data, error, isLoading } = useSWR(id ? `http://localhost:5000/api/players/${id}?season=2024` : null, fetcher);
+    const { data, error, isLoading } = useSWR(id ? `${BACKEND_URL}/api/players/${id}?season=2024` : null, fetcher);
 
     if (isLoading) {
         return (
@@ -132,7 +133,7 @@ export default function PlayerDetailsPage() {
                                 { label: 'Appearances', value: stats.games?.appearences || 0, icon: <Activity className="text-red-500" size={20} /> },
                                 { label: 'Minutes Played', value: stats.games?.minutes || 0, icon: <Calendar className="text-red-500" size={20} /> },
                                 { label: 'Total Goals', value: stats.goals?.total || 0, icon: <Award className="text-red-500" size={20} /> },
-                                { label: 'Assists', value: stats.goals?.assists || stats.passes?.accuracy || 0, icon: <User className="text-red-500" size={20} /> },
+                                { label: 'Assists', value: stats.goals?.assists || 0, icon: <User className="text-red-500" size={20} /> },
                             ].map((stat, idx) => (
                                 <div key={idx} className="bg-neutral-900 rounded-3xl p-6 border border-neutral-800 flex flex-col items-start hover:border-red-600/30 transition-colors">
                                     <div className="bg-neutral-950 p-3 rounded-full mb-4">

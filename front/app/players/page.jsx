@@ -9,7 +9,8 @@ import Link from 'next/link';
 const fetcher = url => axios.get(url).then(res => res.data);
 
 export default function PlayersPage() {
-    const { data: players, error, isLoading } = useSWR('http://localhost:5000/api/players?team=1040&season=2024', fetcher);
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACK_URL || 'http://localhost:3001';
+    const { data: players, error, isLoading } = useSWR(`${BACKEND_URL}/api/players?team=1040&season=2024`, fetcher);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterPosition, setFilterPosition] = useState('All');
 
