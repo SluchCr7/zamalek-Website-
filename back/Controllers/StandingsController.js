@@ -9,7 +9,7 @@ const API_BASE_URL = 'https://v3.football.api-sports.io';
 
 const getHeaders = () => {
     return {
-        'x-apisports-key': process.env.X_APISPORTS_KEY,
+        'x-rapidapi-key': process.env.X_APISPORTS_KEY,
     };
 };
 
