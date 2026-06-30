@@ -1,7 +1,6 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { CalendarDays, MapPin, Plane, Home, Timer, Trophy, Clock3 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 
@@ -13,25 +12,23 @@ export default function Match({ match }) {
   const isLive = ['1H', '2H', 'HT', 'ET', 'P'].includes(match.fixture.status.short)
   const isUpcoming = match.fixture.status.short === 'NS'
 
+  // التحقق من أن الزمالك هو صاحب الأرض
   const isHome = useMemo(() => {
     return match.teams.home.id === 1040 || 
            match.teams.home.name?.toLowerCase().includes('zamalek') || 
            match.teams.home.name?.includes('الزمالك')
   }, [match.teams.home])
 
-  const opponent = useMemo(() => {
-    return isHome ? match.teams.away : match.teams.home
-  }, [isHome, match.teams])
-
+  // حساب وقت العد التنازلي
   useEffect(() => {
     if (!isUpcoming) return
 
     const updateCountdown = () => {
       const now = new Date()
-      const diff = matchDate - now
+      const diff = matchDate.getTime() - now.getTime()
 
       if (diff <= 0) {
-        setTimeLeft('قريباً...')
+        setTimeLeft('بدأت الآن')
         return
       }
 
@@ -39,7 +36,7 @@ export default function Match({ match }) {
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
       const minutes = Math.floor((diff / (1000 * 60)) % 60)
 
-      setTimeLeft(`${days > 0 ? days + 'ي ' : ''}${hours}س ${minutes}د`)
+      setTimeLeft(`${days > 0 ? days + ' يوم و ' : ''}${hours}س : ${minutes}د`)
     }
 
     updateCountdown()
@@ -47,68 +44,82 @@ export default function Match({ match }) {
     return () => clearInterval(timer)
   }, [isUpcoming, matchDate])
 
-  const highlightText = isLive ? 'الآن مباشرة' : isFinished ? 'النتيجة النهائية' : 'المباراة القادمة'
-  const scoreText = isUpcoming ? 'VS' : `${match.goals.home}-${match.goals.away}`
+  // حالة المباراة والشارة العلوية
+  const statusBadge = useMemo(() => {
+    if (isLive) return { text: 'مباشر الآن', bg: 'bg-red-500/10 text-red-400 border-red-500/20' }
+    if (isFinished) return { text: 'انتهت', bg: 'bg-white/5 text-white/60 border-white/10' }
+    return { text: 'مباراة قادمة', bg: 'bg-primary/10 text-primary border-primary/20' }
+  }, [isLive, isFinished])
 
   return (
-    <motion.div
-      whileHover={{ y: -6 }}
-      className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 transition-all duration-300 hover:border-primary/70 focus-within:border-primary/70"
-    >
-      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-primary/15 to-transparent" />
-      <div className="relative z-10 space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-              <Trophy size={18} />
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/60">{match.league.name}</p>
-              <p className="mt-1 text-xs text-white/50">{match.fixture.status.long}</p>
-            </div>
-          </div>
-          <div className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/70">
-            {highlightText}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-[1fr_120px_1fr] items-center gap-4">
-          <TeamColumn team={match.teams.home} isHome={isHome && match.teams.home.id === 1040} />
-          <div className="flex flex-col items-center gap-3">
-            <span className="text-4xl font-black tracking-tight text-white">{scoreText}</span>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-white/50">{new Intl.DateTimeFormat('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' }).format(matchDate)}</span>
-          </div>
-          <TeamColumn team={match.teams.away} isHome={!isHome && match.teams.away.id === 1040} />
-        </div>
-
-        <div className="grid gap-3 rounded-[1.75rem] border border-white/10 bg-black/20 p-4 text-sm text-white/80">
-          <DetailRow icon={<MapPin size={14} />} label="الملعب" value={match.fixture.venue.name || match.venue || 'غير محدد'} />
-          <DetailRow icon={<Clock3 size={14} />} label="التوقيت" value={new Intl.DateTimeFormat('ar-EG', { hour: '2-digit', minute: '2-digit' }).format(matchDate)} />
-          <DetailRow icon={<CalendarDays size={14} />} label="التاريخ" value={new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' }).format(matchDate)} />
-          <DetailRow icon={<Plane size={14} />} label="المكان" value={isHome ? 'داخل الديار' : 'خارج الديار'} />
-          <DetailRow icon={<Home size={14} />} label="المنافس" value={opponent.name} />
-          {isUpcoming && (
-            <DetailRow icon={<Timer size={14} />} label="العد التنازلي" value={timeLeft} />
-          )}
-        </div>
+    <div className="w-full flex flex-col items-center justify-center text-white" dir="rtl">
+      
+      {/* شارة حالة المباراة العلوية */}
+      <div className={`mb-6 rounded-full border px-4 py-1 text-[11px] font-bold tracking-wide ${statusBadge.bg}`}>
+        {statusBadge.text}
       </div>
-    </motion.div>
+
+      {/* منطقة التنافس الرئيسية */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 md:gap-8 w-full max-w-[480px]">
+        
+        {/* الفريق صاحب الأرض */}
+        <TeamDisplay team={match.teams.home} isZamalek={isHome} />
+
+        {/* سكور النتيجة أو التوقيت المنتصف */}
+        <div className="flex flex-col items-center justify-center min-w-[90px] text-center">
+          {isUpcoming ? (
+            <span className="text-2xl font-black text-white/30 tracking-widest">VS</span>
+          ) : (
+            <div className="flex items-center gap-2 text-3xl font-black font-mono tracking-tight" dir="ltr">
+              <span className={isHome ? "text-primary" : "text-white"}>{match.goals.home}</span>
+              <span className="text-white/20">-</span>
+              <span className={!isHome ? "text-primary" : "text-white"}>{match.goals.away}</span>
+            </div>
+          )}
+          
+          {/* تفاصيل متممة صغيرة أسفل النتيجة */}
+          <span className="text-[10px] text-white/40 mt-2 font-medium">
+            {match.fixture.status.short === 'HT' ? 'استراحة' : match.fixture.status.long}
+          </span>
+        </div>
+
+        {/* الفريق الضيف */}
+        <TeamDisplay team={match.teams.away} isZamalek={!isHome} />
+        
+      </div>
+
+      {/* شريط العداد التنازلي البسيط بالأسفل في حال كانت مواجهة قادمة */}
+      {isUpcoming && timeLeft && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-6 text-xs text-white/50 font-medium bg-white/[0.02] border border-white/[0.05] rounded-full px-4 py-1.5 flex items-center gap-2"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <span>تنطلق خلال: <strong>{timeLeft}</strong></span>
+        </motion.div>
+      )}
+
+    </div>
   )
 }
 
-const TeamColumn = ({ team, isHome }) => (
-  <div className="flex flex-col items-center gap-3 text-center">
-    <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-full border border-white/10 bg-white/5">
-      <Image src={team.logo || '/zsc.png'} alt={team.name} fill className="object-contain p-2" />
+// مكون فرعي مرن لعرض شعار واسم كل فريق
+const TeamDisplay = ({ team, isZamalek }) => (
+  <div className="flex flex-col items-center gap-3 text-center flex-1">
+    <div className={`relative h-16 w-16 md:h-20 md:w-20 overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.04] to-transparent border transition-all duration-300 p-2.5 flex items-center justify-center ${isZamalek ? 'border-primary/40 bg-primary/[0.02] shadow-lg shadow-primary/5' : 'border-white/5'}`}>
+      <div className="relative w-full h-full">
+        <Image 
+          src={team.logo || '/zsc.png'} 
+          alt={team.name} 
+          fill 
+          sizes="(max-w-768px) 64px, 80px"
+          className="object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" 
+        />
+      </div>
     </div>
-    <span className={`max-w-[110px] text-[12px] font-black leading-tight ${isHome ? 'text-primary font-extrabold' : 'text-white/80'}`}>{team.name}</span>
+    <span className={`text-xs md:text-sm font-bold leading-tight max-w-[120px] line-clamp-2 ${isZamalek ? 'text-primary font-black' : 'text-white/80'}`}>
+      {team.name}
+    </span>
   </div>
 )
-
-const DetailRow = ({ icon, label, value }) => (
-  <div className="flex items-center justify-between gap-3 text-sm">
-    <div className="flex items-center gap-2 text-white/50">{icon}<span>{label}</span></div>
-    <span className="font-black text-white/90 text-right">{value}</span>
-  </div>
-)
-

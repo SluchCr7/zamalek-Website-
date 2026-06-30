@@ -1,12 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import useSWR from 'swr'
 import axios from 'axios'
-import Match from './Match'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Calendar, MapPin, Award } from 'lucide-react'
 import Link from 'next/link'
+import Match from './Match'
 
 const fetcher = url => axios.get(url).then(res => res.data)
 
@@ -19,143 +19,117 @@ export default function MatchesSlider() {
   const activeMatch = displayFixtures[current]
 
   const nextSlide = () => {
-    if (!displayFixtures.length) return
+    if (!total) return
     setCurrent((prev) => (prev + 1) % total)
   }
 
   const prevSlide = () => {
-    if (!displayFixtures.length) return
+    if (!total) return
     setCurrent((prev) => (prev === 0 ? total - 1 : prev - 1))
   }
 
-  if (error) return <div className="py-24 text-center text-red-500 font-bold">فشل تحميل المباريات</div>
-  if (isLoading || !displayFixtures.length) return (
+  if (error) return <div className="py-16 text-center text-red-500 font-medium">فشل تحميل المباريات. يرجى المحاولة لاحقاً.</div>
+  
+  if (isLoading || !total) return (
     <div className="py-24 flex items-center justify-center">
-      <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      <Loader2 className="w-8 h-8 text-primary animate-spin" />
     </div>
   )
 
+  // تنسيق التاريخ والوقت للمباراة الحالية
+  const matchDate = activeMatch ? new Date(activeMatch.fixture.date).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'short' }) : ''
+  const matchTime = activeMatch ? new Date(activeMatch.fixture.date).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''
+
   return (
-    <section className="relative py-24 overflow-hidden bg-[#070707] text-white">
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-primary/10 blur-3xl" />
-      <div className="container mx-auto px-4 md:px-8 relative z-10">
-        <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" dir="rtl">
+    <section className="py-16 bg-[#0B0B0C] text-white overflow-hidden" dir="rtl">
+      <div className="container mx-auto px-4 max-w-4xl relative">
+        
+        {/* الهيدر أو عنوان القسم */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 border-b border-white/5 pb-6">
           <div>
-            <div className="flex items-center gap-2 text-primary mb-3">
-              <span className="h-1.5 w-12 rounded-full bg-primary" />
-              <span className="text-sm font-black uppercase tracking-[0.2em]">ملخص المباريات</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">مباريات <span className="text-primary">الزمالك</span></h2>
-            <p className="mt-3 max-w-2xl text-sm text-white/70">عرض احترافي وسلس للمباريات المقبلة والماضية مع تفاصيل سريعة، حالة المباراة وتوقيت الانطلاق.</p>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <span className="w-2 h-6 bg-primary rounded-full inline-block" />
+              مباريات <span className="text-primary">الزمالك</span>
+            </h2>
+            <p className="text-xs text-white/50 mt-1">تابع آخر وأحدث مواجهات الفارس الأبيض أولاً بأول</p>
           </div>
-
-          <div className="flex items-center gap-3 text-sm font-black uppercase tracking-[0.18em] text-white/70">
-            <span>{current + 1}</span>
-            <span className="text-primary">/</span>
-            <span>{total}</span>
-            <span className="hidden sm:inline">مبارات مسجلة</span>
-          </div>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20">
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-primary/20 to-transparent" />
-            <div className="relative z-10 h-[520px]">
-              {displayFixtures.map((match, index) => {
-                const offset = index - current
-                let positionX = offset * 480
-                if (current === 0 && index === total - 1) positionX = -480
-                if (current === total - 1 && index === 0) positionX = 480
-
-                const isVisible = Math.abs(offset) <= 2 || positionX === 0
-
-                return (
-                  <motion.div
-                    key={match.fixture.id || index}
-                    initial={false}
-                    animate={{
-                      x: positionX,
-                      opacity: isVisible ? 1 : 0,
-                      scale: offset === 0 ? 1 : 0.85,
-                      filter: offset === 0 ? 'blur(0px)' : 'blur(2px)',
-                    }}
-                    transition={{ type: 'spring', damping: 22, stiffness: 120 }}
-                    className="absolute inset-0 flex justify-center px-4"
-                  >
-                    <div className="w-full max-w-[460px]">
-                      <Match match={match} />
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </div>
-
-            <div className="absolute inset-x-0 top-1/2 z-20 mx-auto flex w-full max-w-[calc(100%-2rem)] items-center justify-between px-4 pointer-events-none">
-              <button
+          
+          {/* عداد السلايدر والتحكم */}
+          <div className="flex items-center gap-4 self-end sm:self-auto">
+            <span className="text-xs font-mono text-white/40">
+              <strong className="text-white text-sm">{current + 1}</strong> / {total}
+            </span>
+            <div className="flex gap-1.5">
+              <button 
                 onClick={prevSlide}
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-primary transition-colors duration-200"
                 aria-label="المباراة السابقة"
-                className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white transition hover:bg-primary/90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <ChevronRight size={22} />
+                <ChevronRight size={18} />
               </button>
-              <button
+              <button 
                 onClick={nextSlide}
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-primary transition-colors duration-200"
                 aria-label="المباراة التالية"
-                className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white transition hover:bg-primary/90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <ChevronLeft size={22} />
+                <ChevronLeft size={18} />
               </button>
-            </div>
-          </div>
-
-          <div className="space-y-6" aria-live="polite">
-            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20">
-              <div className="mb-6 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-white/50">تفاصيل المباراة الحالية</p>
-                  <h3 className="mt-3 text-2xl font-black">{activeMatch?.league?.name || 'منافسة رسمية'}</h3>
-                </div>
-                <span className="rounded-full bg-primary/15 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-primary">{activeMatch?.fixture?.status?.long || 'قريباً'}</span>
-              </div>
-
-              <div className="grid gap-4">
-                <DetailLine label="الملعب" value={activeMatch?.fixture?.venue?.name || activeMatch?.venue || 'غير معروف'} />
-                <DetailLine label="المدينة" value={activeMatch?.fixture?.venue?.city || activeMatch?.city || 'غير معروف'} />
-                <DetailLine label="التاريخ" value={activeMatch ? new Date(activeMatch.fixture.date).toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'} />
-                <DetailLine label="الوقت" value={activeMatch ? new Date(activeMatch.fixture.date).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '—'} />
-                <DetailLine label="حكم المباراة" value={activeMatch?.referee || '—'} />
-                <DetailLine label="نوع المباراة" value={activeMatch?.fixture?.referee ? (activeMatch?.fixture?.status?.short === 'NS' ? 'مباراة قادمة' : 'جارية / منتهية') : activeMatch?.matchType || '—'} />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <StatCard label="النتيجة" value={activeMatch?.goals ? `${activeMatch.goals.home}-${activeMatch.goals.away}` : 'VS'} />
-              <StatCard label="المباراة" value={activeMatch?.teams?.home?.name ? `${activeMatch.teams.home.name} ضد ${activeMatch.teams.away.name}` : '—'} />
-            </div>
-
-            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 text-center">
-              <p className="text-xs uppercase tracking-[0.24em] text-white/50">انتقل لمعرفة المزيد</p>
-              <Link href="/Pages/Fixtures" className="mt-5 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-black uppercase tracking-[0.18em] text-white hover:bg-primary-hover transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                عرض كافة المباريات
-              </Link>
             </div>
           </div>
         </div>
+
+        {/* عرض السلايدر الاحترافي البسيط */}
+        <div className="relative min-h-[380px] md:min-h-[320px] flex flex-col justify-between gap-6 bg-gradient-to-b from-white/[0.03] to-transparent border border-white/[0.06] rounded-2xl p-6 md:p-8 backdrop-blur-md">
+          
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+              className="grid md:grid-cols-[1fr_auto_1fr] items-center gap-8 w-full"
+            >
+              {/* المكون الفرعي لعرض الفريقين والنتيجة */}
+              <div className="md:col-span-3 flex justify-center py-2">
+                <div className="w-full max-w-[500px]">
+                  <Match match={activeMatch} />
+                </div>
+              </div>
+
+              {/* تفاصيل إضافية سريعة ومبسطة أسفل كرت المباراة */}
+              <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/[0.05] text-xs text-white/70">
+                <div className="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
+                  <Calendar size={15} className="text-primary shrink-0" />
+                  <span className="truncate">{matchDate} - {matchTime}</span>
+                </div>
+                
+                <div className="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
+                  <MapPin size={15} className="text-primary shrink-0" />
+                  <span className="truncate">{activeMatch?.fixture?.venue?.name || 'ملعب المباراة'}</span>
+                </div>
+
+                <div className="flex items-center gap-2 col-span-2 sm:col-span-1 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
+                  <Award size={15} className="text-primary shrink-0" />
+                  <span className="truncate">{activeMatch?.league?.name || 'بطولة رسمية'}</span>
+                </div>
+              </div>
+
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* زر الانتقال لجميع المباريات بلمسة أنيقة */}
+        <div className="mt-8 text-center">
+          <Link 
+            href="/Pages/Fixtures" 
+            className="inline-flex items-center justify-center text-xs font-semibold text-white/60 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 rounded-full px-6 py-2.5 transition-all duration-200"
+          >
+            عرض جدول المباريات بالكامل
+          </Link>
+        </div>
+
       </div>
     </section>
   )
 }
-
-const DetailLine = ({ label, value }) => (
-  <div className="flex items-center justify-between rounded-3xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80">
-    <span className="text-white/60">{label}</span>
-    <span className="font-black text-white">{value}</span>
-  </div>
-)
-
-const StatCard = ({ label, value }) => (
-  <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-center">
-    <div className="text-[10px] uppercase tracking-[0.22em] text-white/50">{label}</div>
-    <div className="mt-3 text-3xl font-black text-white">{value}</div>
-  </div>
-)

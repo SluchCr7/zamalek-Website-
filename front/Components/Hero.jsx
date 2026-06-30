@@ -69,7 +69,7 @@ const Hero = () => {
 
             {/* Heading */}
 
-            <h1 className="mt-10 text-5xl md:text-7xl xl:text-8xl font-black leading-none tracking-tight">
+            <h1 className="mt-10 text-5xl md:text-7xl xl:text-8xl font-black leading-none tracking-tight text-white">
 
               مدرسة الفن والهندسة
 
@@ -104,6 +104,7 @@ const Hero = () => {
                 rounded-xl
                 bg-red-600
                 hover:bg-red-700
+                text-white
                 px-8
                 py-4
                 font-semibold
@@ -129,6 +130,7 @@ const Hero = () => {
                 hover:bg-white/10
                 px-8
                 py-4
+                text-white
                 font-semibold
                 transition-all
                 duration-300
